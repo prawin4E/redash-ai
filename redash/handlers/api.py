@@ -94,6 +94,11 @@ from redash.handlers.visualizations import (
     VisualizationResource,
 )
 from redash.handlers.widgets import WidgetListResource, WidgetResource
+from redash.handlers.ai_document import (
+    AIDocumentGenerateResource,
+    AIDocumentRegenerateResource,
+    AIDocumentHistoryResource,
+)
 from redash.utils import json_dumps
 
 
@@ -285,3 +290,8 @@ api.add_org_resource(QuerySnippetResource, "/api/query_snippets/<snippet_id>", e
 api.add_org_resource(QuerySnippetListResource, "/api/query_snippets", endpoint="query_snippets")
 
 api.add_org_resource(OrganizationSettings, "/api/settings/organization", endpoint="organization_settings")
+
+# AI Document Generation
+api.add_org_resource(AIDocumentGenerateResource, "/api/ai-document/generate", endpoint="ai_document_generate")
+api.add_org_resource(AIDocumentRegenerateResource, "/api/ai-document/regenerate", endpoint="ai_document_regenerate")
+api.add_org_resource(AIDocumentHistoryResource, "/api/ai-document/history/<query_id>", endpoint="ai_document_history")

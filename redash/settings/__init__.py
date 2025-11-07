@@ -468,3 +468,11 @@ CSRF_TIME_LIMIT = int(os.environ.get("REDASH_CSRF_TIME_LIMIT", 3600 * 6))
 
 # Email blocked domains, use delimiter comma to separated multiple domains
 BLOCKED_DOMAINS = set_from_string(os.environ.get("REDASH_BLOCKED_DOMAINS", "qq.com"))
+
+# AI Document Generation - LLM Configuration
+# Set LLM_API_KEY in environment variables to enable AI document generation
+LLM_API_KEY = os.environ.get("LLM_API_KEY", "")
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai")  # Options: openai, anthropic, or mock
+LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4-turbo-preview")  # For OpenAI: gpt-4-turbo-preview, gpt-3.5-turbo; For Anthropic: claude-3-opus-20240229, claude-3-sonnet-20240229
+AI_DOCUMENT_MAX_ROWS = int(os.environ.get("AI_DOCUMENT_MAX_ROWS", "1000"))  # Maximum rows to send to LLM to avoid token limits
+AI_DOCUMENT_ENABLED = parse_boolean(os.environ.get("AI_DOCUMENT_ENABLED", "true"))  # Feature flag to enable/disable AI document generation

@@ -38,6 +38,8 @@ import useEditVisualizationDialog from "./hooks/useEditVisualizationDialog";
 import useDeleteVisualization from "./hooks/useDeleteVisualization";
 import useFullscreenHandler from "../../lib/hooks/useFullscreenHandler";
 
+import AIDocumentAssistant from "@/components/ai-document-assistant/AIDocumentAssistant";
+
 import "./QueryView.less";
 
 function QueryView(props) {
@@ -223,6 +225,13 @@ function QueryView(props) {
         <div className={cx("p-t-15 p-r-15 p-l-15", { hidden: fullscreen })}>
           <QueryMetadata layout="horizontal" query={query} dataSource={dataSource} onEditSchedule={editSchedule} />
         </div>
+        {!fullscreen && (
+          <AIDocumentAssistant
+            queryResult={queryResult}
+            queryResultData={queryResultData}
+            query={query}
+          />
+        )}
       </div>
     </div>
   );
