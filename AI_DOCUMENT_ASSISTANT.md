@@ -80,6 +80,9 @@ pip install openai
 # For Anthropic Claude
 pip install anthropic
 
+# For AWS Bedrock (boto3 already included in Redash dependencies)
+# No additional installation needed - boto3 is pre-installed
+
 # For token counting (optional)
 pip install tiktoken
 ```
@@ -90,11 +93,16 @@ Add the following to your `.env` file:
 
 ```bash
 # LLM Provider Configuration
-LLM_API_KEY=your-api-key-here                    # Required: Your OpenAI or Anthropic API key
-LLM_PROVIDER=openai                              # Options: openai, anthropic, mock
+LLM_API_KEY=your-api-key-here                    # Required for OpenAI/Anthropic (not needed for Bedrock)
+LLM_PROVIDER=openai                              # Options: openai, anthropic, bedrock, mock
 LLM_MODEL=gpt-4-turbo-preview                    # Model to use (see below for options)
 AI_DOCUMENT_MAX_ROWS=1000                        # Max rows to send to LLM (avoid token limits)
 AI_DOCUMENT_ENABLED=true                         # Feature flag to enable/disable
+
+# AWS Bedrock Configuration (only if using LLM_PROVIDER=bedrock)
+AWS_BEDROCK_REGION=us-east-1                     # AWS region where Bedrock is available
+AWS_ACCESS_KEY_ID=your-aws-access-key            # Your AWS access key
+AWS_SECRET_ACCESS_KEY=your-aws-secret-key        # Your AWS secret key
 ```
 
 #### Supported Models
@@ -108,6 +116,15 @@ AI_DOCUMENT_ENABLED=true                         # Feature flag to enable/disabl
 - `claude-3-opus-20240229`
 - `claude-3-sonnet-20240229`
 - `claude-3-haiku-20240307`
+
+**AWS Bedrock:**
+- `anthropic.claude-3-5-sonnet-20241022-v2:0` (recommended - Claude 3.5 Sonnet v2)
+- `anthropic.claude-3-5-sonnet-20240620-v1:0` (Claude 3.5 Sonnet v1)
+- `anthropic.claude-3-sonnet-20240229-v1:0` (Claude 3 Sonnet)
+- `anthropic.claude-3-opus-20240229-v1:0` (Claude 3 Opus - most capable)
+- `anthropic.claude-3-haiku-20240307-v1:0` (Claude 3 Haiku - fastest)
+- `anthropic.claude-v2:1` (Claude 2.1)
+- `anthropic.claude-v2` (Claude 2)
 
 **Mock (for testing):**
 - Set `LLM_PROVIDER=mock` to use a mock generator (no API key needed)

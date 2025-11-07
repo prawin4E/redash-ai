@@ -22,6 +22,10 @@ class LLMService:
         self.api_key = settings.LLM_API_KEY
         self.model = settings.LLM_MODEL
         self.max_rows = settings.AI_DOCUMENT_MAX_ROWS
+        # AWS Bedrock specific settings
+        self.aws_region = getattr(settings, 'AWS_BEDROCK_REGION', 'us-east-1')
+        self.aws_access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
+        self.aws_secret_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
 
     def generate_document(
         self,
@@ -40,10 +44,17 @@ class LLMService:
         Returns:
             Dictionary with 'document' (generated content) and 'format' keys
         """
-        if not self.api_key:
-            raise ValueError(
-                "LLM API key not configured. Please set LLM_API_KEY in environment variables."
-            )
+        # Validate credentials based on provider
+        if self.provider == "bedrock":
+            if not self.aws_access_key or not self.aws_secret_key:
+                raise ValueError(
+                    "AWS credentials not configured. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables."
+                )
+        elif self.provider != "mock":
+            if not self.api_key:
+                raise ValueError(
+                    "LLM API key not configured. Please set LLM_API_KEY in environment variables."
+                )
 
         # Format query data for LLM context
         context = self._format_query_data(query_data)
@@ -58,6 +69,8 @@ class LLMService:
                 document = self._call_openai(system_prompt, user_prompt)
             elif self.provider == "anthropic":
                 document = self._call_anthropic(system_prompt, user_prompt)
+            elif self.provider == "bedrock":
+                document = self._call_bedrock(system_prompt, user_prompt)
             else:
                 # Fallback to mock for development/testing
                 document = self._generate_mock_document(query_data, prompt)
@@ -202,6 +215,71 @@ Please generate the document now:"""
             )
         except Exception as e:
             logger.error(f"Anthropic API error: {str(e)}")
+            raise
+
+    def _call_bedrock(self, system_prompt: str, user_prompt: str) -> str:
+        """Call AWS Bedrock Claude API"""
+        try:
+            import boto3
+            import json
+
+            # Create Bedrock Runtime client
+            bedrock_runtime = boto3.client(
+                service_name='bedrock-runtime',
+                region_name=self.aws_region,
+                aws_access_key_id=self.aws_access_key,
+                aws_secret_access_key=self.aws_secret_key
+            )
+
+            # Prepare the request body for Claude models
+            # Format depends on model version
+            if self.model.startswith("anthropic.claude-3"):
+                # Claude 3 models use Messages API format
+                request_body = {
+                    "anthropic_version": "bedrock-2023-05-31",
+                    "max_tokens": 2000,
+                    "system": system_prompt,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": user_prompt
+                        }
+                    ],
+                    "temperature": 0.7,
+                }
+            else:
+                # Claude 2 and earlier models use completion format
+                combined_prompt = f"{system_prompt}\n\nHuman: {user_prompt}\n\nAssistant:"
+                request_body = {
+                    "prompt": combined_prompt,
+                    "max_tokens_to_sample": 2000,
+                    "temperature": 0.7,
+                    "top_p": 1,
+                }
+
+            # Invoke the model
+            response = bedrock_runtime.invoke_model(
+                modelId=self.model,
+                body=json.dumps(request_body)
+            )
+
+            # Parse response
+            response_body = json.loads(response['body'].read())
+
+            # Extract text based on model version
+            if self.model.startswith("anthropic.claude-3"):
+                # Claude 3 models return content array
+                return response_body['content'][0]['text']
+            else:
+                # Claude 2 and earlier return completion
+                return response_body.get('completion', '')
+
+        except ImportError:
+            raise ImportError(
+                "boto3 package not installed. Install with: pip install boto3"
+            )
+        except Exception as e:
+            logger.error(f"AWS Bedrock API error: {str(e)}")
             raise
 
     def _generate_mock_document(self, query_data: Dict[str, Any], prompt: str) -> str:
