@@ -1,0 +1,34 @@
+{
+    "template_file": "Inspection report - 40000043248.xlsx",
+    "mappings": {
+      "dimension_table": {
+        "type": "table",
+        "columns": {
+          "pt_no": "A",
+          "dim_description": "B",
+          "specified||tolerance": "D"
+        },
+        "start_row": 13
+      },
+      "supplier_name": {
+        "type": "cell",
+        "location": "E5",
+        "prefix": "Name of the supplier: "
+      },
+      "item_description": {
+        "type": "cell",
+        "location": "E6",
+        "prefix": "Item Description: "
+      },
+      "report_no": {
+        "type": "cell",
+        "location": "I5",
+        "prefix": "Report no.: "
+      },
+      "drawing_no": {
+        "type": "cell",
+        "location": "I6",
+        "prefix": "Drawing No.: "
+      }
+    }
+  }

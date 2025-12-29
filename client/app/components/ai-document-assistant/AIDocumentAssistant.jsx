@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import PropTypes from "prop-types";
-import { message } from "antd";
+import message from "antd/lib/message";
 import FloatingChatBubble from "./FloatingChatBubble";
 import ChatPanel from "./ChatPanel";
 import DocumentEditorModal from "./DocumentEditorModal";
@@ -17,8 +17,13 @@ export default function AIDocumentAssistant({ queryResult, queryResultData, quer
   const [lastPrompt, setLastPrompt] = useState("");
 
   const toggleChat = useCallback(() => {
-    setIsChatOpen((prev) => !prev);
-  }, []);
+    console.log("AI Document Assistant: toggleChat called, current state:", isChatOpen);
+    setIsChatOpen((prev) => {
+      const newState = !prev;
+      console.log("AI Document Assistant: Setting chat open to:", newState);
+      return newState;
+    });
+  }, [isChatOpen]);
 
   const closeChat = useCallback(() => {
     setIsChatOpen(false);
@@ -81,6 +86,44 @@ export default function AIDocumentAssistant({ queryResult, queryResultData, quer
           format: "markdown",
         });
 
+        console.log("AI Document Assistant: API response:", response);
+        console.log("AI Document Assistant: Response type:", typeof response);
+        console.log("AI Document Assistant: Response keys:", response ? Object.keys(response) : "response is null/undefined");
+
+        // Validate response
+        if (!response) {
+          throw new Error("Empty response from server");
+        }
+
+        if (response.error) {
+          throw new Error(response.error);
+        }
+
+        // Handle different possible response structures
+        let documentContent = null;
+        let documentFormat = "markdown";
+
+        if (response.document) {
+          // Standard response structure
+          documentContent = response.document;
+          documentFormat = response.format || "markdown";
+        } else if (typeof response === "string") {
+          // Response might be the document string directly
+          documentContent = response;
+        } else if (response.data && response.data.document) {
+          // Response might be wrapped in a data property
+          documentContent = response.data.document;
+          documentFormat = response.data.format || "markdown";
+        } else {
+          // Unknown structure - log it and throw error
+          console.error("AI Document Assistant: Unexpected response structure:", JSON.stringify(response, null, 2));
+          throw new Error(`Invalid response format from server. Response structure: ${JSON.stringify(response)}`);
+        }
+
+        if (!documentContent) {
+          throw new Error("Document content is missing from server response");
+        }
+
         // Add assistant message
         const assistantMessage = {
           role: "assistant",
@@ -91,8 +134,8 @@ export default function AIDocumentAssistant({ queryResult, queryResultData, quer
 
         // Set document and open editor
         setCurrentDocument({
-          content: response.document,
-          format: response.format || "markdown",
+          content: documentContent,
+          format: documentFormat,
           prompt,
         });
 

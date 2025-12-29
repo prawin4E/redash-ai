@@ -10,13 +10,11 @@ const AIDocumentService = {
    * @returns {Promise<Object>} Generated document
    */
   generate({ prompt, queryData, format = "markdown" }) {
-    return axios
-      .post("/api/ai-document/generate", {
-        prompt,
-        query_data: queryData,
-        format,
-      })
-      .then((response) => response.data);
+    return axios.post("/api/ai-document/generate", {
+      prompt,
+      query_data: queryData,
+      format,
+    });
   },
 
   /**
@@ -28,13 +26,11 @@ const AIDocumentService = {
    * @returns {Promise<Object>} Regenerated document
    */
   regenerate({ documentId, prompt, queryData }) {
-    return axios
-      .post("/api/ai-document/regenerate", {
-        document_id: documentId,
-        prompt,
-        query_data: queryData,
-      })
-      .then((response) => response.data);
+    return axios.post("/api/ai-document/regenerate", {
+      document_id: documentId,
+      prompt,
+      query_data: queryData,
+    });
   },
 
   /**
@@ -43,7 +39,7 @@ const AIDocumentService = {
    * @returns {Promise<Array>} List of previous documents
    */
   getHistory(queryId) {
-    return axios.get(`/api/ai-document/history/${queryId}`).then((response) => response.data);
+    return axios.get(`/api/ai-document/history/${queryId}`);
   },
 };
 

@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
-import { Drawer, Input, Button, Space, Tag, Spin, Avatar } from "antd";
+import Drawer from "antd/lib/drawer";
+import Input from "antd/lib/input";
+import Button from "antd/lib/button";
+import Space from "antd/lib/space";
+import Spin from "antd/lib/spin";
+import Avatar from "antd/lib/avatar";
 import { SendOutlined, RobotOutlined, UserOutlined, CloseOutlined } from "@ant-design/icons";
 
 const { TextArea } = Input;
@@ -11,14 +16,41 @@ const QUICK_PROMPTS = [
   { key: "report", label: "📋 Detailed Report", prompt: "Generate a detailed report based on these results." },
   { key: "anomalies", label: "🔍 Find Anomalies", prompt: "Highlight any anomalies or outliers in this data." },
   { key: "actions", label: "✅ Action Items", prompt: "Suggest action items based on these findings." },
+  {
+    key: "twin_precision_report",
+    label: "🔬 Twin Precision Report",
+    prompt: `Generate a "Twin Precision Treatment Progress Report" for the patient using the provided data. The report should follow the structure and tone of the example report, and it should be formatted using markdown, including tables for data presentation.
+
+The report must have the following sections:
+
+1.  **A brief introduction** summarizing the patient's progress.
+2.  **"Adherence & Lifestyle Summary"**: Generate a markdown table with the columns: \`Grouped Treatment Days\`, \`GFY %\`, \`Days Without Logs\`, \`Macro/Micro/Biota\`, \`Action Score\`, \`Steps\`, \`Sleep (hrs)\`. You will need to calculate these values from the \`engagement_data\` JSON.
+3.  **"Phase 1 — Early Reset: Weight & Adaptation"**: Present the data as a list, showing the start and latest values for Weight and BMI, with percentage change.
+4.  **"Phase 2 — Glycemic & Cardiovascular Regulation"**:
+    *   Present HbA1c, C-Peptide, and Heart Resilience Score as a list.
+    *   Then, create a "Key Biomarkers" subsection with a markdown table. The table should have the columns: \`Parameter\`, \`Start\`, \`Latest\`, \`Target\`.
+5.  **"Phase 3 — Lipid Metabolism"**: Generate a markdown table with the columns: \`Parameter\`, \`Start Date\`, \`Latest Date\`, \`Interpretation\`.
+6.  **"Phase 4 — Inflammation & Recovery"**: Generate a markdown table with the columns: \`Parameter\`, \`Start\`, \`Latest\`, \`Interpretation\`.
+7.  **"Phase 5 — Cellular Resilience (CRS)"**: Generate a markdown table with the columns: \`Domain\`, \`Score\`, \`Interpretation\`.
+8.  **"Phase 6 — Twin-Guided Action Plan"**: Present the recommendations as a list with subheadings for Nutrition, Metabolic Rhythm, and Activity & Sleep.
+9.  **A concluding "Physician’s Closing Note"**.
+
+For each metric, show the starting value from the \`start_*\` columns and the latest value from the \`latest_*\` columns. Calculate the percentage change where appropriate and provide a brief interpretation of the results, similar to the example report. Use the \`start_date\` and \`end_date\` to define the reporting period.`
+  },
 ];
 
 export default function ChatPanel({ visible, onClose, onSendMessage, messages, isGenerating }) {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef(null);
 
+  useEffect(() => {
+    console.log("AI Document Assistant: ChatPanel visible changed to:", visible);
+  }, [visible]);
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   useEffect(() => {
@@ -55,7 +87,7 @@ export default function ChatPanel({ visible, onClose, onSendMessage, messages, i
       }
       placement="right"
       onClose={onClose}
-      open={visible}
+      visible={visible}
       width={450}
       className="ai-chat-panel"
       closeIcon={<CloseOutlined />}

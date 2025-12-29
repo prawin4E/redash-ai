@@ -1,19 +1,31 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { Tooltip } from "antd";
+import Tooltip from "antd/lib/tooltip";
 import { MessageOutlined, RobotOutlined } from "@ant-design/icons";
 
 export default function FloatingChatBubble({ onClick, isOpen, isGenerating }) {
+  const handleClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("AI Document Assistant: Chat bubble clicked");
+    if (onClick) {
+      onClick();
+    } else {
+      console.warn("AI Document Assistant: onClick handler is missing");
+    }
+  };
+
   return (
     <Tooltip title="AI Document Assistant" placement="left">
       <div
         className={`ai-chat-bubble ${isOpen ? "open" : ""} ${isGenerating ? "generating" : ""}`}
-        onClick={onClick}
+        onClick={handleClick}
         role="button"
         tabIndex={0}
         onKeyPress={(e) => {
           if (e.key === "Enter" || e.key === " ") {
-            onClick();
+            e.preventDefault();
+            handleClick(e);
           }
         }}
       >
@@ -28,7 +40,7 @@ export default function FloatingChatBubble({ onClick, isOpen, isGenerating }) {
         </div>
         {!isOpen && (
           <div className="ai-chat-bubble-badge">
-            <span className="ai-sparkle">✨</span>
+            <span className="ai-sparkle" role="img" aria-label="sparkle">✨</span>
           </div>
         )}
       </div>

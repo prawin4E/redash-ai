@@ -4,9 +4,13 @@ x-redash-service: &redash-service
   build:
     context: .
     args:
-      skip_frontend_build: "true"  # set to empty string to build
-  volumes:
-    - .:/app
+      skip_frontend_build: ""  # set to empty string to build
+  # For development, mounting the whole repo over /app hides the built frontend assets
+  # and can cause a blank page if client/dist is not built locally.
+  # If you need live code reloading, you can re-enable this, but make sure to run `yarn build`
+  # so that client/dist exists on the host.
+  # volumes:
+  #   - .:/app
   env_file:
     - .env
 x-redash-environment: &redash-environment

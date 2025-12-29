@@ -1,6 +1,13 @@
 import React, { useState, useRef } from "react";
 import PropTypes from "prop-types";
-import { Modal, Tabs, Button, Input, Space, message, Dropdown } from "antd";
+import Modal from "antd/lib/modal";
+import Tabs from "antd/lib/tabs";
+import Button from "antd/lib/button";
+import Input from "antd/lib/input";
+import Space from "antd/lib/space";
+import message from "antd/lib/message";
+import Dropdown from "antd/lib/dropdown";
+import Menu from "antd/lib/menu";
 import {
   EditOutlined,
   EyeOutlined,
@@ -12,9 +19,17 @@ import {
 } from "@ant-design/icons";
 import { jsPDF } from "jspdf";
 import { saveAs } from "file-saver";
+import { marked } from "marked";
+import sanitize from "@/services/sanitize"; // Import the sanitize service
 
 const { TextArea } = Input;
 const { TabPane } = Tabs;
+
+// Configure marked to handle tables and line breaks
+marked.setOptions({
+  gfm: true,
+  breaks: true,
+});
 
 export default function DocumentEditorModal({
   visible,
@@ -42,37 +57,60 @@ export default function DocumentEditorModal({
   const downloadAsPDF = () => {
     try {
       const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 15;
-      const maxLineWidth = pageWidth - margin * 2;
-      const lineHeight = 7;
-      let y = margin;
 
-      // Title
-      doc.setFontSize(16);
-      doc.setFont(undefined, "bold");
-      doc.text("AI Generated Document", margin, y);
-      y += lineHeight * 2;
-
-      // Content
-      doc.setFontSize(11);
-      doc.setFont(undefined, "normal");
-
-      // Split content into lines that fit the page width
-      const lines = doc.splitTextToSize(editedContent, maxLineWidth);
-
-      lines.forEach((line) => {
-        if (y + lineHeight > pageHeight - margin) {
-          doc.addPage();
-          y = margin;
+      // CSS styles for the PDF content
+      const styles = `
+        body { font-family: Helvetica, sans-serif; font-size: 11px; line-height: 1.6; }
+        h1 { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 16px;
+          font-size: 9px; /* Smaller font for PDF */
         }
-        doc.text(line, margin, y);
-        y += lineHeight;
-      });
+        th, td {
+          border: 1px solid #d9d9d9;
+          padding: 6px 8px; /* Smaller padding for PDF */
+          text-align: left;
+        }
+        th {
+          background-color: #f2f2f2;
+          font-weight: bold;
+        }
+        tr:nth-child(even) {
+          background-color: #fafafa;
+        }
+      `;
 
-      doc.save(`redash-document-${Date.now()}.pdf`);
-      message.success("Document downloaded as PDF");
+      // Convert markdown to HTML
+      const htmlContent = marked.parse(editedContent);
+
+      // Combine styles and content
+      const finalHtml = `
+        <html>
+          <head>
+            <style>${styles}</style>
+          </head>
+          <body>
+            <h1>AI Generated Document</h1>
+            ${htmlContent}
+          </body>
+        </html>
+      `;
+
+      doc.html(finalHtml, {
+        callback: function (doc) {
+          doc.save(`redash-document-${Date.now()}.pdf`);
+          message.success("Document downloaded as PDF");
+        },
+        x: 10,
+        y: 10,
+        width: 190, // A4 width in mm is 210, leaving some margin
+        windowWidth: 700, // virtual window width to layout the html
+        html2canvas: {
+          scale: 0.25, // Adjust scale to fit content
+        }
+      });
     } catch (error) {
       message.error("Failed to generate PDF: " + error.message);
     }
@@ -84,26 +122,19 @@ export default function DocumentEditorModal({
     message.success("Document downloaded as Text");
   };
 
-  const downloadMenuItems = [
-    {
-      key: "markdown",
-      icon: <FileMarkdownOutlined />,
-      label: "Download as Markdown",
-      onClick: downloadAsMarkdown,
-    },
-    {
-      key: "pdf",
-      icon: <FilePdfOutlined />,
-      label: "Download as PDF",
-      onClick: downloadAsPDF,
-    },
-    {
-      key: "text",
-      icon: <FileWordOutlined />,
-      label: "Download as Text",
-      onClick: downloadAsText,
-    },
-  ];
+  const downloadMenu = (
+    <Menu>
+      <Menu.Item key="markdown" icon={<FileMarkdownOutlined />} onClick={downloadAsMarkdown}>
+        Download as Markdown
+      </Menu.Item>
+      <Menu.Item key="pdf" icon={<FilePdfOutlined />} onClick={downloadAsPDF}>
+        Download as PDF
+      </Menu.Item>
+      <Menu.Item key="text" icon={<FileWordOutlined />} onClick={downloadAsText}>
+        Download as Text
+      </Menu.Item>
+    </Menu>
+  );
 
   const handleRegenerate = () => {
     if (onRegenerate) {
@@ -111,36 +142,15 @@ export default function DocumentEditorModal({
     }
   };
 
-  // Convert markdown to basic HTML for preview
+  // Convert markdown to HTML for preview using 'marked' library and sanitize it
   const renderPreview = (content) => {
-    // Basic markdown to HTML conversion
-    let html = content;
-
-    // Headers
-    html = html.replace(/^### (.*$)/gim, "<h3>$1</h3>");
-    html = html.replace(/^## (.*$)/gim, "<h2>$1</h2>");
-    html = html.replace(/^# (.*$)/gim, "<h1>$1</h1>");
-
-    // Bold
-    html = html.replace(/\*\*(.*?)\*\*/gim, "<strong>$1</strong>");
-
-    // Italic
-    html = html.replace(/\*(.*?)\*/gim, "<em>$1</em>");
-
-    // Lists
-    html = html.replace(/^\* (.*$)/gim, "<li>$1</li>");
-    html = html.replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>");
-
-    // Line breaks
-    html = html.replace(/\n/gim, "<br/>");
-
-    return html;
+    return sanitize(marked.parse(content));
   };
 
   return (
     <Modal
       title="AI Generated Document"
-      open={visible}
+      visible={visible}
       onCancel={onClose}
       width={900}
       footer={
@@ -154,10 +164,7 @@ export default function DocumentEditorModal({
           >
             Regenerate
           </Button>
-          <Dropdown
-            menu={{ items: downloadMenuItems }}
-            trigger={["click"]}
-          >
+          <Dropdown overlay={downloadMenu} trigger={["click"]}>
             <Button type="primary" icon={<DownloadOutlined />}>
               Download
             </Button>

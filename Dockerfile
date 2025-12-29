@@ -23,7 +23,7 @@ ENV BABEL_ENV=${code_coverage:+test}
 # Avoid issues caused by lags in disk and network I/O speeds when working on top of QEMU emulation for multi-platform image building.
 RUN yarn config set network-timeout 300000
 
-RUN if [ "x$skip_frontend_build" = "x" ] ; then yarn --frozen-lockfile --network-concurrency 1; fi
+RUN if [ "x$skip_frontend_build" = "x" ] ; then yarn install --network-concurrency 1; fi
 
 COPY --chown=redash client /frontend/client
 COPY --chown=redash webpack.config.js /frontend/
@@ -103,7 +103,17 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 # Avoid crashes, including corrupted cache artifacts, when building multi-platform images with GitHub Actions.
 RUN /etc/poetry/bin/poetry cache clear pypi --all
 
+# Configure Poetry and pip timeouts to avoid network timeout issues
+# Similar to yarn network-timeout configuration above
+# Reduce concurrent workers to avoid overwhelming network connections
+RUN /etc/poetry/bin/poetry config installer.max-workers 1
+# Set pip timeout (Poetry uses pip under the hood)
+ENV PIP_DEFAULT_TIMEOUT=300
+ENV PIP_TIMEOUT=300
+
 COPY pyproject.toml poetry.lock ./
+
+RUN /etc/poetry/bin/poetry lock --no-interaction --no-ansi
 
 ARG POETRY_OPTIONS="--no-root --no-interaction --no-ansi"
 # for LDAP authentication, install with `ldap3` group

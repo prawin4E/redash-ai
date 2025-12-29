@@ -34,8 +34,9 @@ class AIDocumentGenerateResource(BaseResource):
     def post(self):
         """Generate a new document from query results"""
         try:
+            logger.info('================================================================')
             data = request.get_json(force=True)
-
+            logger.info(f'data==={data}')
             # Extract parameters
             prompt = data.get("prompt")
             query_data = data.get("query_data", {})
@@ -50,14 +51,14 @@ class AIDocumentGenerateResource(BaseResource):
 
             # Get LLM service
             llm_service = get_llm_service()
-
+            logger.info(f'llm_service==={llm_service}')
             # Generate document
             result = llm_service.generate_document(
                 query_data=query_data,
                 prompt=prompt,
                 output_format=output_format
             )
-
+            logger.info(f'result==={result}')
             return {
                 "document": result["document"],
                 "format": result["format"],
@@ -90,7 +91,7 @@ class AIDocumentRegenerateResource(BaseResource):
         """Regenerate a document with new parameters"""
         try:
             data = request.get_json(force=True)
-
+            logger.info(f'data==={data}')
             # Extract parameters
             prompt = data.get("prompt")
             query_data = data.get("query_data", {})
@@ -105,14 +106,14 @@ class AIDocumentRegenerateResource(BaseResource):
 
             # Get LLM service
             llm_service = get_llm_service()
-
+            logger.info(f'llm_service==={llm_service}')
             # Generate new document
             result = llm_service.generate_document(
                 query_data=query_data,
                 prompt=prompt,
                 output_format=output_format
             )
-
+            logger.info(f'result==={result}')
             return {
                 "document": result["document"],
                 "format": result["format"],
@@ -133,7 +134,7 @@ class AIDocumentHistoryResource(BaseResource):
     """
     Get history of generated documents for a query
 
-    GET /api/ai-document/history/<query_id>
+    GET /api/ai-document/history/<query_id
     """
 
     def get(self, query_id):
@@ -145,3 +146,4 @@ class AIDocumentHistoryResource(BaseResource):
             "documents": [],
             "message": "Document history feature coming soon"
         }, 200
+
